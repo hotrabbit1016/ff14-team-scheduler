@@ -38,8 +38,7 @@ test.describe("FF14 固定團排班", () => {
     await addMemberAvailability(page, "MT 無法出團測試", "MT", [["週一", "20:00", "22:00"]]);
     await page.getByTitle("編輯").click();
     await page.getByLabel("本週無法出團").check();
-    await page.getByRole("button", { name: "儲存" }).click();
-    await page.getByRole("button", { name: "回隊伍頁" }).click();
+    await page.getByRole("button", { name: "送出本週可出時間" }).click();
 
     await expect(page.getByText("本週無法：MT")).toBeVisible();
     await expect(page.getByText("本週無法", { exact: true })).toBeVisible();
@@ -87,8 +86,6 @@ async function addMemberAvailability(
   await page.getByLabel("角色暱稱").fill(name);
   await expect(page.getByLabel("職能")).toHaveValue(role);
   await page.getByLabel("職能").selectOption(role);
-  await page.getByLabel("常用職業").fill(role === "MT" || role === "ST" ? "戰士" : "測試職業");
-  await page.getByLabel("DC 名稱").fill(`${name}@discord`);
   await page.getByRole("button", { name: "加入並填寫時間" }).click();
 
   await expect(page.getByRole("heading", { name: `${name} 的本週填表` })).toBeVisible();
@@ -99,7 +96,6 @@ async function addMemberAvailability(
     await page.getByRole("button", { name: "新增" }).click();
     await expect(page.getByLabel(`移除 ${weekday} ${start}-${end}`)).toBeVisible();
   }
-  await page.getByRole("button", { name: "儲存" }).click();
-  await expect(page.getByText("已儲存")).toBeVisible();
-  await page.getByRole("button", { name: "回隊伍頁" }).click();
+  await page.getByRole("button", { name: "送出本週可出時間" }).click();
+  await expect(page.getByRole("heading", { name: /E2E/ })).toBeVisible();
 }

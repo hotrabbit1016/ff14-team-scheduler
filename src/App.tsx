@@ -1,4 +1,4 @@
-import { CalendarCheck, ClipboardCopy, Clock3, Copy, Plus, Save, ShieldAlert, Trash2, UsersRound, Utensils } from "lucide-react";
+import { CalendarCheck, ClipboardCopy, Clock3, Copy, Plus, ShieldAlert, Trash2, UsersRound, Utensils } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import {
   MEMBER_ROLES,
@@ -437,7 +437,6 @@ function MembersTab({
                   <div aria-label={`成員 ${member.displayName}`} className="position-member" key={member.id}>
                     <div className="member-main">
                       <strong>{member.displayName}</strong>
-                      <span>{member.jobs || "未填職業"} · {member.discordName || "未填 DC"}</span>
                     </div>
                     <span className={`status-badge ${override?.status === "absent" ? "danger" : count ? "good" : "warn"}`}>
                       {override?.status === "absent" ? "本週無法" : count ? "已填" : "未填"}
@@ -503,7 +502,7 @@ function JoinPage({ initialRole, slug }: { initialRole?: MemberRole; slug: strin
 }
 
 function MemberPage({ slug, memberId }: { slug: string; memberId: string }) {
-  const { bundle, loading, error, reload } = useTeamBundle(slug);
+  const { bundle, loading, error } = useTeamBundle(slug);
   const member = bundle?.members.find((item) => item.id === memberId);
   const [profile, setProfile] = useState<MemberInput>(emptyMemberInput());
   const [draftSlots, setDraftSlots] = useState<Array<Omit<Availability, "id" | "memberId">>>([]);
@@ -542,13 +541,11 @@ function MemberPage({ slug, memberId }: { slug: string; memberId: string }) {
   }, [bundle, member]);
 
   async function save() {
-    if (!member || !profile.displayName.trim()) return;
-    await store.updateMember(member.id, profile);
+    if (!member || !bundle || !profile.displayName.trim()) return;
+    await store.updateMember(member.id, { ...profile, jobs: "", discordName: "" });
     await store.replaceMemberAvailability(member.id, draftSlots);
     await store.upsertWeeklyOverride(member.id, WEEK_START, override);
-    await reload();
-    setMessage("已儲存，回隊伍頁看本週可練場次。");
-    window.setTimeout(() => setMessage(""), 1800);
+    navigate(`/team/${bundle.team.publicSlug}`);
   }
 
   function addSlot() {
@@ -581,10 +578,6 @@ function MemberPage({ slug, memberId }: { slug: string; memberId: string }) {
         <p className="eyebrow">{bundle.team.name}</p>
         <h1>{member.displayName} 的本週填表</h1>
         <div className="action-row">
-          <button className="primary-button" onClick={save}>
-            <Save size={18} />
-            儲存
-          </button>
           <button className="secondary-button" onClick={() => navigate(`/team/${bundle.team.publicSlug}`)}>
             回隊伍頁
           </button>
@@ -668,6 +661,12 @@ function MemberPage({ slug, memberId }: { slug: string; memberId: string }) {
             </button>
           </div>
           <WeeklySlotGrid draftSlots={draftSlots} setDraftSlots={setDraftSlots} />
+          <div className="form-submit-row">
+            <button className="primary-button" onClick={save}>
+              <CalendarCheck size={18} />
+              送出本週可出時間
+            </button>
+          </div>
         </section>
       </div>
     </section>
@@ -801,22 +800,6 @@ function CompactMemberProfileFields({
           ))}
         </select>
       </label>
-      <label>
-        常用職業
-        <input
-          value={profile.jobs}
-          onChange={(event) => setProfile((current) => ({ ...current, jobs: event.target.value }))}
-          placeholder="例：戰士 / 暗黑"
-        />
-      </label>
-      <label>
-        DC 名稱（選填）
-        <input
-          value={profile.discordName}
-          onChange={(event) => setProfile((current) => ({ ...current, discordName: event.target.value }))}
-          placeholder="例：rabbit"
-        />
-      </label>
     </div>
   );
 }
@@ -938,8 +921,8 @@ function memberToInput(member: Member): MemberInput {
   return {
     displayName: member.displayName,
     role: member.role,
-    jobs: member.jobs,
-    discordName: member.discordName,
+    jobs: "",
+    discordName: "",
     canSubstitute: member.canSubstitute,
     notes: member.notes,
   };

@@ -826,6 +826,18 @@ select:disabled {
   margin: 0;
 }
 
+.form-submit-row {
+  border-top: 1px solid rgba(125, 240, 242, 0.14);
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+  padding-top: 18px;
+}
+
+.form-submit-row .primary-button {
+  min-width: 220px;
+}
+
 @media (max-width: 980px) {
   .home-shell,
   .dashboard-grid {
@@ -906,6 +918,10 @@ select:disabled {
   .quick-slot-row .toggle-pill {
     flex: 1 1 100%;
     justify-content: flex-start;
+  }
+
+  .form-submit-row .primary-button {
+    width: 100%;
   }
 
   .day-slot-card {
