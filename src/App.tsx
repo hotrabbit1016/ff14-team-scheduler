@@ -692,6 +692,7 @@ function CandidateCard({
 }) {
   const status = getSessionStatus(slot, requiredMemberCount);
   const missingCount = Math.max(requiredMemberCount - slot.availableMembers.length, slot.unavailableMembers.length);
+  const shortMissingRoles = slot.missingRoles.join("、");
   return (
     <article
       aria-label={`${WEEKDAYS[slot.weekday]} ${formatRange(slot.startMinutes, slot.endMinutes)}，${formatMealsFromMinutes(slot.endMinutes - slot.startMinutes)}，${slot.availableMembers.length}/${requiredMemberCount} 人可出`}
@@ -715,15 +716,22 @@ function CandidateCard({
           {slot.availableMembers.length}/{requiredMemberCount} 人可出
           {missingCount === 0 ? " · 全員到齊" : ` · 缺 ${missingCount} 人`}
         </p>
-        <p>{slot.missingRoles.length ? `缺位置：${slot.missingRoles.join("、")}` : "位置完整"}</p>
+        <p>
+          {slot.missingRoles.length
+            ? missingCount === 1
+              ? `缺 ${shortMissingRoles}，找補可練`
+              : `缺位置：${shortMissingRoles}`
+            : "位置完整"}
+        </p>
         {actionLabel && onAction && (
           <button className="secondary-button candidate-action" disabled={disabledAction} onClick={onAction}>
             {actionLabel}
           </button>
         )}
       </div>
+      <RoleAttendanceMatrix slot={slot} />
       <MemberChips label="可出" members={slot.availableMembers} tone="available" />
-      <MemberChips label="不可出" members={slot.unavailableMembers} tone="missing" />
+      <MemberChips label="缺席" members={slot.unavailableMembers} tone="missing" />
     </article>
   );
 }
@@ -946,6 +954,27 @@ function MemberChips({ label, members, tone }: { label: string; members: Member[
           {roleLabel(member.role)} {member.displayName}
         </span>
       ))}
+    </div>
+  );
+}
+
+function RoleAttendanceMatrix({ slot }: { slot: CandidateWindow }) {
+  return (
+    <div className="role-attendance-matrix" aria-label="位置出席狀態">
+      {MEMBER_ROLES.map((role) => {
+        const availableMember = slot.availableMembers.find((member) => member.role === role);
+        const unavailableMember = slot.unavailableMembers.find((member) => member.role === role);
+        const member = availableMember ?? unavailableMember;
+        const state = availableMember ? "available" : "missing";
+        const stateLabel = availableMember ? "可出" : unavailableMember ? "缺席" : "未填";
+        return (
+          <div className={`role-attendance-cell ${roleToneClass(role)} ${state}`} key={role}>
+            <span className="role-attendance-role">{roleLabel(role)}</span>
+            <span className="role-attendance-state">{stateLabel}</span>
+            <span className="role-attendance-name">{member?.displayName ?? "尚未建立"}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }

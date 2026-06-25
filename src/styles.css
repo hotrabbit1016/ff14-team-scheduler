@@ -501,6 +501,74 @@ select:disabled {
   margin-top: 10px;
 }
 
+.role-attendance-matrix {
+  display: grid;
+  gap: 8px;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.role-attendance-cell {
+  background: rgba(8, 22, 34, 0.72);
+  border: 1px solid rgba(125, 240, 242, 0.14);
+  border-radius: 8px;
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 9px 10px;
+}
+
+.role-attendance-cell.available.tank {
+  border-color: rgba(110, 168, 255, 0.36);
+}
+
+.role-attendance-cell.available.healer {
+  border-color: rgba(126, 224, 163, 0.36);
+}
+
+.role-attendance-cell.available.dd {
+  border-color: rgba(255, 154, 118, 0.36);
+}
+
+.role-attendance-cell.missing {
+  border-style: dashed;
+  opacity: 0.78;
+}
+
+.role-attendance-role {
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.role-attendance-cell.tank .role-attendance-role {
+  color: #a9cbff;
+}
+
+.role-attendance-cell.healer .role-attendance-role {
+  color: #9cf2c5;
+}
+
+.role-attendance-cell.dd .role-attendance-role {
+  color: #ffb49a;
+}
+
+.role-attendance-state {
+  color: #d8e8ee;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.role-attendance-name {
+  color: #91a9b3;
+  font-size: 12px;
+  font-weight: 800;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .decision-headline {
   color: #f1d184;
   font-size: 18px;
@@ -907,12 +975,17 @@ select:disabled {
   }
 
   .session-badges,
-  .chip-group {
+  .chip-group,
+  .role-attendance-matrix {
     grid-column: 1;
   }
 
   .session-badges {
     grid-template-columns: repeat(2, minmax(0, max-content));
+  }
+
+  .role-attendance-matrix {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .quick-slot-row .toggle-pill {
