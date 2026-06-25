@@ -472,7 +472,7 @@ select:disabled {
   border-radius: 8px;
   display: grid;
   gap: 14px;
-  grid-template-columns: 58px minmax(0, 1fr);
+  grid-template-columns: 78px minmax(0, 1fr);
   min-width: 0;
   padding: 16px;
 }
@@ -509,19 +509,41 @@ select:disabled {
   margin: 0 0 14px;
 }
 
-.rank-number {
+.session-badges {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rank-number,
+.meal-badge {
   align-items: center;
-  background: linear-gradient(180deg, #f1d184, #b68739);
   border-radius: 8px;
-  color: #111925;
   display: flex;
   font-size: 13px;
   font-weight: 900;
-  height: 44px;
   justify-content: center;
-  padding: 0 10px;
   white-space: nowrap;
-  width: 58px;
+}
+
+.rank-number {
+  background: linear-gradient(180deg, #f1d184, #b68739);
+  color: #111925;
+  min-height: 36px;
+  padding: 0 10px;
+}
+
+.meal-badge {
+  background: rgba(241, 209, 132, 0.13);
+  border: 1px solid rgba(241, 209, 132, 0.34);
+  color: #f6d98d;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 8px;
+}
+
+.meal-badge svg {
+  flex: 0 0 auto;
 }
 
 .chip-group {
@@ -545,16 +567,34 @@ select:disabled {
   padding: 5px 9px;
 }
 
-.member-chip.available,
 .status-badge.good {
   background: rgba(140, 230, 186, 0.18);
   color: #9cf2c5;
 }
 
-.member-chip.missing,
 .status-badge.danger {
   background: rgba(255, 156, 142, 0.16);
   color: #ffb1a6;
+}
+
+.member-chip.tank {
+  background: rgba(110, 168, 255, 0.18);
+  color: #a9cbff;
+}
+
+.member-chip.healer {
+  background: rgba(126, 224, 163, 0.18);
+  color: #9cf2c5;
+}
+
+.member-chip.dd {
+  background: rgba(255, 154, 118, 0.18);
+  color: #ffb49a;
+}
+
+.member-chip.missing {
+  border: 1px dashed currentColor;
+  opacity: 0.72;
 }
 
 .status-badge.warn {
@@ -854,8 +894,13 @@ select:disabled {
     width: 100%;
   }
 
+  .session-badges,
   .chip-group {
     grid-column: 1;
+  }
+
+  .session-badges {
+    grid-template-columns: repeat(2, minmax(0, max-content));
   }
 
   .quick-slot-row .toggle-pill {

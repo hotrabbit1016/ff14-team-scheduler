@@ -1,4 +1,4 @@
-import { CalendarCheck, ClipboardCopy, Clock3, Copy, Plus, Save, ShieldAlert, Trash2, UsersRound } from "lucide-react";
+import { CalendarCheck, ClipboardCopy, Clock3, Copy, Plus, Save, ShieldAlert, Trash2, UsersRound, Utensils } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import {
   MEMBER_ROLES,
@@ -679,7 +679,13 @@ function CandidateCard({
       aria-label={`${WEEKDAYS[slot.weekday]} ${formatRange(slot.startMinutes, slot.endMinutes)}，${formatMealsFromMinutes(slot.endMinutes - slot.startMinutes)}，${slot.availableMembers.length}/${requiredMemberCount} 人可出`}
       className="ranking-card"
     >
-      <div className="rank-number">第 {index + 1} 場</div>
+      <div className="session-badges">
+        <span className="rank-number">第 {index + 1} 場</span>
+        <span className="meal-badge">
+          <Utensils size={14} />
+          {formatMealsFromMinutes(slot.endMinutes - slot.startMinutes)}
+        </span>
+      </div>
       <div className="candidate-main">
         <div className="candidate-title-row">
           <h3>
@@ -688,7 +694,7 @@ function CandidateCard({
           <span className={`status-badge ${statusTone(status)}`}>{sessionStatusLabel(status)}</span>
         </div>
         <p>
-          {formatMealsFromMinutes(slot.endMinutes - slot.startMinutes)} · {slot.availableMembers.length}/{requiredMemberCount} 人可出
+          {slot.availableMembers.length}/{requiredMemberCount} 人可出
           {missingCount === 0 ? " · 全員到齊" : ` · 缺 ${missingCount} 人`}
         </p>
         <p>{slot.missingRoles.length ? `缺位置：${slot.missingRoles.join("、")}` : "位置完整"}</p>
@@ -934,7 +940,7 @@ function MemberChips({ label, members, tone }: { label: string; members: Member[
     <div className="chip-group">
       <span>{label}</span>
       {members.map((member) => (
-        <span className={`member-chip ${tone}`} key={member.id}>
+        <span className={`member-chip ${tone} ${roleToneClass(member.role)}`} key={member.id}>
           {roleLabel(member.role)} {member.displayName}
         </span>
       ))}

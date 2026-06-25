@@ -27,7 +27,8 @@ test.describe("FF14 固定團排班", () => {
     await expect(page.getByLabel("週三 20:00-22:30，5飯，8/8 人可出")).toBeVisible();
     await expect(page.getByLabel("週四 20:00-22:30，5飯，8/8 人可出")).toBeVisible();
     await expect(page.getByLabel("週五 20:00-22:30，5飯，8/8 人可出")).toBeVisible();
-    await expect(page.locator(".ranking-card").filter({ hasText: "5飯 · 8/8 人可出" })).toHaveCount(5);
+    await expect(page.locator(".ranking-card").filter({ hasText: "5飯" })).toHaveCount(5);
+    await expect(page.locator(".ranking-card").filter({ hasText: "8/8 人可出" })).toHaveCount(5);
   });
 
   test("成員標記本週無法出團後，回覆進度顯示該位置狀態", async ({ page }) => {
