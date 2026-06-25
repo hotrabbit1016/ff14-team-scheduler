@@ -30,6 +30,7 @@ const store = createStore();
 const WEEK_START = getCurrentWeekStart();
 
 const XIVAPI_ICON_URL = "https://cafemaker.wakingsands.com/i/026000/026039.png";
+const BASE_PATH = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 type Route =
   | { name: "home" }
@@ -38,7 +39,7 @@ type Route =
   | { name: "member"; slug: string; memberId: string };
 
 function parseRoute(): Route {
-  const parts = window.location.pathname
+  const parts = stripBasePath(window.location.pathname)
     .split("/")
     .filter(Boolean)
     .map((part) => decodeURIComponent(part));
@@ -59,8 +60,26 @@ function parseRoleParam(value: string | null): MemberRole | undefined {
 }
 
 function navigate(path: string) {
-  window.history.pushState({}, "", path);
+  window.history.pushState({}, "", withBasePath(path));
   window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
+function stripBasePath(pathname: string) {
+  if (!BASE_PATH || BASE_PATH === "/") return pathname;
+  return pathname === BASE_PATH ? "/" : pathname.replace(new RegExp(`^${escapeRegExp(BASE_PATH)}(?=/|$)`), "");
+}
+
+function withBasePath(path: string) {
+  if (!BASE_PATH || BASE_PATH === "/") return path;
+  return `${BASE_PATH}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+function absoluteAppUrl(path: string) {
+  return `${window.location.origin}${withBasePath(path)}`;
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export function App() {
@@ -172,7 +191,7 @@ function TeamPage({ slug }: { slug: string }) {
   const { team, members, availability, weeklyOverrides } = bundle;
   const thisWeekOverrides = weeklyOverrides.filter((override) => override.weekStart === WEEK_START);
   const weeklyPlan = computeWeeklyPlan(members, availability, team, thisWeekOverrides);
-  const teamUrl = `${window.location.origin}/team/${team.publicSlug}`;
+  const teamUrl = absoluteAppUrl(`/team/${team.publicSlug}`);
   const announcement = createDiscordAnnouncement(team, weeklyPlan, members, teamUrl);
   const respondedMembers = members.filter(
     (member) =>

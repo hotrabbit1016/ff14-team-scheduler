@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
+    "build:pages": "tsc --noEmit && vite build --base /ff14-team-scheduler/ && cp dist/index.html dist/404.html",
     "test": "vitest run --config vitest.config.ts",
     "test:e2e": "playwright test",
     "preview": "vite preview --host 127.0.0.1"
