@@ -10,8 +10,8 @@ test.describe("FF14 固定團排班", () => {
     await expect(page.getByText("0/8 人已回覆")).toBeVisible();
 
     const roles = ["MT", "ST", "H1", "H2", "D1", "D2", "D3", "D4"];
-    for (const [index, role] of roles.entries()) {
-      await addMemberAvailability(page, `${role} ${index + 1}`, role, [
+    for (const role of roles) {
+      await addMemberAvailability(page, role, [
         ["週一", "20:00", "22:30"],
         ["週二", "20:00", "22:30"],
         ["週三", "20:00", "22:30"],
@@ -35,7 +35,7 @@ test.describe("FF14 固定團排班", () => {
     const teamName = `E2E 無法出團 ${Date.now()}`;
     await createTeam(page, teamName);
 
-    await addMemberAvailability(page, "MT 無法出團測試", "MT", [["週一", "20:00", "22:00"]]);
+    await addMemberAvailability(page, "MT", [["週一", "20:00", "22:00"]]);
     await page.getByTitle("編輯").click();
     await page.getByLabel("本週無法出團").check();
     await page.getByRole("button", { name: "送出本週可出時間" }).click();
@@ -49,7 +49,7 @@ test.describe("FF14 固定團排班", () => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await createTeam(page, teamName);
     for (const role of ["MT", "H1", "H2", "D1", "D2", "D3", "D4"]) {
-      await addMemberAvailability(page, `${role} 公告測試`, role, [["週一", "20:00", "22:00"]]);
+      await addMemberAvailability(page, role, [["週一", "20:00", "22:00"]]);
     }
 
     await expect(page.getByText("本週可練 1 場")).toBeVisible();
@@ -78,17 +78,12 @@ async function createTeam(
 
 async function addMemberAvailability(
   page: import("@playwright/test").Page,
-  name: string,
   role: string,
   slots: Array<[string, string, string]>,
 ) {
   await page.getByRole("button", { name: `填 ${role}` }).click();
-  await page.getByLabel("角色暱稱").fill(name);
-  await expect(page.getByLabel("職能")).toHaveValue(role);
-  await page.getByLabel("職能").selectOption(role);
-  await page.getByRole("button", { name: "加入並填寫時間" }).click();
 
-  await expect(page.getByRole("heading", { name: `${name} 的本週填表` })).toBeVisible();
+  await expect(page.getByRole("heading", { name: `${role} 的本週可出時間` })).toBeVisible();
   for (const [weekday, start, end] of slots) {
     await page.getByLabel("星期").selectOption({ label: weekday });
     await page.getByLabel("開始").selectOption({ label: start });

@@ -211,8 +211,9 @@ describe("leader decision helpers", () => {
 
     expect(summary.headline).toContain("本週可練 1 場");
     expect(summary.statusLabel).toBe("可排本週");
-    expect(summary.nextSteps.join(" ")).toContain("Cecil");
-    expect(summary.nextSteps.join(" ")).toContain("Dora");
+    expect(summary.nextSteps.join(" ")).toContain("D1");
+    expect(summary.nextSteps.join(" ")).toContain("D4");
+    expect(summary.nextSteps.join(" ")).not.toContain("Cecil");
   });
 });
 

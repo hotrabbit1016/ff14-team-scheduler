@@ -1,5 +1,6 @@
 import { CalendarCheck, ClipboardCopy, Clock3, Copy, Plus, ShieldAlert, Trash2, UsersRound, Utensils } from "lucide-react";
-import { FormEvent, useEffect, useState } from "react";
+import type { FormEvent } from "react";
+import { useEffect, useState } from "react";
 import {
   MEMBER_ROLES,
   SLOT_MINUTES,
@@ -211,7 +212,7 @@ function TeamPage({ slug }: { slug: string }) {
   }
 
   async function deleteMember(member: Member) {
-    const confirmed = window.confirm(`刪除 ${member.displayName} 與他的排班資料？`);
+    const confirmed = window.confirm(`刪除 ${roleLabel(member.role)} 的排班資料？`);
     if (!confirmed) return;
     await store.deleteMember(member.id);
     await reload();
@@ -244,6 +245,7 @@ function TeamPage({ slug }: { slug: string }) {
         onCopyAnnouncement={() => copy(announcement, "announcement")}
         onCopyTeamUrl={() => copy(teamUrl, "team")}
         onDelete={deleteMember}
+        teamId={team.id}
         overrides={thisWeekOverrides}
         teamSlug={team.publicSlug}
         teamPartySize={team.partySize}
@@ -262,6 +264,7 @@ function SimpleTeamPage({
   availability,
   overrides,
   teamSlug,
+  teamId,
   teamPartySize,
   respondedCount,
   copied,
@@ -277,6 +280,7 @@ function SimpleTeamPage({
   availability: Availability[];
   overrides: WeeklyOverride[];
   teamSlug: string;
+  teamId: string;
   teamPartySize: number;
   respondedCount: number;
   copied: string;
@@ -341,6 +345,7 @@ function SimpleTeamPage({
         members={members}
         overrides={overrides}
         teamSlug={teamSlug}
+        teamId={teamId}
         onDelete={onDelete}
       />
     </div>
@@ -397,14 +402,29 @@ function MembersTab({
   availability,
   overrides,
   teamSlug,
+  teamId,
   onDelete,
 }: {
   members: Member[];
   availability: Availability[];
   overrides: WeeklyOverride[];
   teamSlug: string;
+  teamId: string;
   onDelete: (member: Member) => void;
 }) {
+  const [creatingRole, setCreatingRole] = useState<MemberRole | null>(null);
+
+  async function openRoleForm(role: MemberRole, existingMember?: Member) {
+    if (existingMember) {
+      navigate(`/team/${teamSlug}/member/${existingMember.id}`);
+      return;
+    }
+
+    setCreatingRole(role);
+    const member = await store.addMember(teamId, positionMemberInput(role));
+    navigate(`/team/${teamSlug}/member/${member.id}`);
+  }
+
   return (
     <section className="panel span-2">
       <div className="section-heading split-heading">
@@ -425,18 +445,22 @@ function MembersTab({
               {roleMembers.length === 0 ? (
                 <div className="position-empty">
                   <span className="muted">未填</span>
-                  <button className="secondary-button fill-position-button" onClick={() => navigate(`/team/${teamSlug}/join?role=${role}`)}>
+                  <button
+                    className="secondary-button fill-position-button"
+                    disabled={creatingRole === role}
+                    onClick={() => openRoleForm(role)}
+                  >
                     <Plus size={16} />
-                    填 {roleLabel(role)}
+                    {creatingRole === role ? "開啟中" : `填 ${roleLabel(role)}`}
                   </button>
                 </div>
               ) : roleMembers.map((member) => {
                 const count = availability.filter((slot) => slot.memberId === member.id).length;
                 const override = overrides.find((item) => item.memberId === member.id);
                 return (
-                  <div aria-label={`成員 ${member.displayName}`} className="position-member" key={member.id}>
+                  <div aria-label={`位置 ${roleLabel(member.role)}`} className="position-member" key={member.id}>
                     <div className="member-main">
-                      <strong>{member.displayName}</strong>
+                      <strong>{roleLabel(member.role)}</strong>
                     </div>
                     <span className={`status-badge ${override?.status === "absent" ? "danger" : count ? "good" : "warn"}`}>
                       {override?.status === "absent" ? "本週無法" : count ? "已填" : "未填"}
@@ -445,7 +469,7 @@ function MembersTab({
                       <button
                         className="icon-button"
                         title="編輯"
-                        onClick={() => navigate(`/team/${teamSlug}/member/${member.id}`)}
+                        onClick={() => openRoleForm(role, member)}
                       >
                         <CalendarCheck size={18} />
                       </button>
@@ -466,45 +490,35 @@ function MembersTab({
 
 function JoinPage({ initialRole, slug }: { initialRole?: MemberRole; slug: string }) {
   const { bundle, loading, error } = useTeamBundle(slug);
-  const [profile, setProfile] = useState<MemberInput>(() => emptyMemberInput(initialRole));
-  const [saving, setSaving] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    if (!initialRole) return;
-    setProfile((current) => ({ ...current, role: initialRole }));
-  }, [initialRole]);
-
-  async function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    if (!bundle || !profile.displayName.trim()) return;
-    setSaving(true);
-    const member = await store.addMember(bundle.team.id, profile);
-    navigate(`/team/${bundle.team.publicSlug}/member/${member.id}`);
-  }
+    if (!bundle || creating) return;
+    if (!initialRole) {
+      navigate(`/team/${bundle.team.publicSlug}`);
+      return;
+    }
+    const existingMember = bundle.members.find((member) => member.role === initialRole);
+    if (existingMember) {
+      navigate(`/team/${bundle.team.publicSlug}/member/${existingMember.id}`);
+      return;
+    }
+    setCreating(true);
+    store
+      .addMember(bundle.team.id, positionMemberInput(initialRole))
+      .then((member) => navigate(`/team/${bundle.team.publicSlug}/member/${member.id}`));
+  }, [bundle, creating, initialRole]);
 
   if (loading) return <StatusPanel text="讀取隊伍中" />;
   if (error) return <StatusPanel text={error} />;
   if (!bundle) return <StatusPanel text="找不到這個隊伍。" />;
 
-  return (
-    <section className="narrow-page">
-      <form className="panel member-form" onSubmit={onSubmit}>
-        <p className="eyebrow">{bundle.team.name}</p>
-        <h1>{initialRole ? `填 ${roleLabel(initialRole)} 位置` : "加入隊伍"}</h1>
-        <CompactMemberProfileFields profile={profile} setProfile={setProfile} />
-        <button className="primary-button" type="submit" disabled={saving || !profile.displayName.trim()}>
-          <Plus size={18} />
-          {saving ? "加入中" : "加入並填寫時間"}
-        </button>
-      </form>
-    </section>
-  );
+  return <StatusPanel text="開啟填表中" />;
 }
 
 function MemberPage({ slug, memberId }: { slug: string; memberId: string }) {
   const { bundle, loading, error } = useTeamBundle(slug);
   const member = bundle?.members.find((item) => item.id === memberId);
-  const [profile, setProfile] = useState<MemberInput>(emptyMemberInput());
   const [draftSlots, setDraftSlots] = useState<Array<Omit<Availability, "id" | "memberId">>>([]);
   const [override, setOverride] = useState<WeeklyOverrideInput>({
     status: "normal",
@@ -519,7 +533,6 @@ function MemberPage({ slug, memberId }: { slug: string; memberId: string }) {
 
   useEffect(() => {
     if (!bundle || !member) return;
-    setProfile(memberToInput(member));
     setDraftSlots(
       bundle.availability
         .filter((slot) => slot.memberId === member.id)
@@ -541,8 +554,8 @@ function MemberPage({ slug, memberId }: { slug: string; memberId: string }) {
   }, [bundle, member]);
 
   async function save() {
-    if (!member || !bundle || !profile.displayName.trim()) return;
-    await store.updateMember(member.id, { ...profile, jobs: "", discordName: "" });
+    if (!member || !bundle) return;
+    await store.updateMember(member.id, positionMemberInput(member.role));
     await store.replaceMemberAvailability(member.id, draftSlots);
     await store.upsertWeeklyOverride(member.id, WEEK_START, override);
     navigate(`/team/${bundle.team.publicSlug}`);
@@ -576,7 +589,7 @@ function MemberPage({ slug, memberId }: { slug: string; memberId: string }) {
     <section className="workspace">
       <div className="page-title">
         <p className="eyebrow">{bundle.team.name}</p>
-        <h1>{member.displayName} 的本週填表</h1>
+        <h1>{roleLabel(member.role)} 的本週可出時間</h1>
         <div className="action-row">
           <button className="secondary-button" onClick={() => navigate(`/team/${bundle.team.publicSlug}`)}>
             回隊伍頁
@@ -776,42 +789,6 @@ function WeeklySlotGrid({
   );
 }
 
-function CompactMemberProfileFields({
-  profile,
-  setProfile,
-}: {
-  profile: MemberInput;
-  setProfile: React.Dispatch<React.SetStateAction<MemberInput>>;
-}) {
-  return (
-    <div className="form-grid">
-      <label>
-        角色暱稱
-        <input
-          autoFocus
-          value={profile.displayName}
-          onChange={(event) => setProfile((current) => ({ ...current, displayName: event.target.value }))}
-          maxLength={24}
-          placeholder="例：光之豆芽"
-        />
-      </label>
-      <label>
-        職能
-        <select
-          value={profile.role}
-          onChange={(event) => setProfile((current) => ({ ...current, role: event.target.value as MemberRole }))}
-        >
-          {MEMBER_ROLES.map((role) => (
-            <option key={role} value={role}>
-              {roleLabel(role)}
-            </option>
-          ))}
-        </select>
-      </label>
-    </div>
-  );
-}
-
 function weekdaySlots(weekdays: number[], startHour: number, endHour: number) {
   return weekdays.map((weekday) => ({
     weekday,
@@ -904,12 +881,19 @@ function useTeamBundle(slug: string) {
 
 function emptyMemberInput(role: MemberRole = "D1"): MemberInput {
   return {
-    displayName: "",
+    displayName: roleLabel(role),
     role,
     jobs: "",
     discordName: "",
     canSubstitute: false,
     notes: "",
+  };
+}
+
+function positionMemberInput(role: MemberRole): MemberInput {
+  return {
+    ...emptyMemberInput(role),
+    displayName: roleLabel(role),
   };
 }
 
@@ -923,17 +907,6 @@ function roleGroupLabel(role: MemberRole) {
   if (role === "MT" || role === "ST") return "坦";
   if (role === "H1" || role === "H2") return "補";
   return "DD";
-}
-
-function memberToInput(member: Member): MemberInput {
-  return {
-    displayName: member.displayName,
-    role: member.role,
-    jobs: "",
-    discordName: "",
-    canSubstitute: member.canSubstitute,
-    notes: member.notes,
-  };
 }
 
 function startTimeOptions() {
@@ -951,7 +924,7 @@ function MemberChips({ label, members, tone }: { label: string; members: Member[
       <span>{label}</span>
       {members.map((member) => (
         <span className={`member-chip ${tone} ${roleToneClass(member.role)}`} key={member.id}>
-          {roleLabel(member.role)} {member.displayName}
+          {roleLabel(member.role)}
         </span>
       ))}
     </div>
@@ -964,14 +937,12 @@ function RoleAttendanceMatrix({ slot }: { slot: CandidateWindow }) {
       {MEMBER_ROLES.map((role) => {
         const availableMember = slot.availableMembers.find((member) => member.role === role);
         const unavailableMember = slot.unavailableMembers.find((member) => member.role === role);
-        const member = availableMember ?? unavailableMember;
         const state = availableMember ? "available" : "missing";
         const stateLabel = availableMember ? "可出" : unavailableMember ? "缺席" : "未填";
         return (
           <div className={`role-attendance-cell ${roleToneClass(role)} ${state}`} key={role}>
             <span className="role-attendance-role">{roleLabel(role)}</span>
             <span className="role-attendance-state">{stateLabel}</span>
-            <span className="role-attendance-name">{member?.displayName ?? "尚未建立"}</span>
           </div>
         );
       })}

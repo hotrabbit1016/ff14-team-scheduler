@@ -307,8 +307,8 @@ export function computeLeaderSummary(
     nextSteps.push("目前沒有可練場次，先請團員補填表");
   }
 
-  if (unfilledMembers.length) nextSteps.push(`催填表：${unfilledMembers.map((member) => member.displayName).join("、")}`);
-  if (absentMembers.length) nextSteps.push(`本週無法出團：${absentMembers.map((member) => member.displayName).join("、")}`);
+  if (unfilledMembers.length) nextSteps.push(`催填表：${unfilledMembers.map((member) => member.role).join("、")}`);
+  if (absentMembers.length) nextSteps.push(`本週無法出團：${absentMembers.map((member) => member.role).join("、")}`);
   if (riskSlots.length) nextSteps.push("部分推薦場次需要補位或改時段");
   if (nextSteps.length === 1 && !unfilledMembers.length && !absentMembers.length) {
     nextSteps.push("人數與職能狀態穩定，可以直接發公告");
@@ -417,7 +417,7 @@ export function createDiscordAnnouncement(
     ...(announcementSlots.length
       ? announcementSlots.map(
           (slot, index) =>
-            `${index + 1}. ${WEEKDAYS[slot.weekday]} ${formatRange(slot.startMinutes, slot.endMinutes)}｜${formatMealsFromMinutes(slot.endMinutes - slot.startMinutes)}｜${slot.availableMembers.length}/${requiredMemberCount} 可出｜${sessionStatusLabel(getSessionStatus(slot, requiredMemberCount))}｜缺位置：${slot.missingRoles.join("、") || "無"}｜不可出：${slot.unavailableMembers.map((member) => member.displayName).join("、") || "無"}`,
+            `${index + 1}. ${WEEKDAYS[slot.weekday]} ${formatRange(slot.startMinutes, slot.endMinutes)}｜${formatMealsFromMinutes(slot.endMinutes - slot.startMinutes)}｜${slot.availableMembers.length}/${requiredMemberCount} 可出｜${sessionStatusLabel(getSessionStatus(slot, requiredMemberCount))}｜缺位置：${slot.missingRoles.join("、") || "無"}｜不可出：${slot.unavailableMembers.map((member) => member.role).join("、") || "無"}`,
         )
       : ["目前還沒有交集時段，請團員補填可出時間。"]),
     "",

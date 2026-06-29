@@ -559,16 +559,6 @@ select:disabled {
   font-weight: 900;
 }
 
-.role-attendance-name {
-  color: #91a9b3;
-  font-size: 12px;
-  font-weight: 800;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .decision-headline {
   color: #f1d184;
   font-size: 18px;
